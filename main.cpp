@@ -6,14 +6,23 @@
 #include "hitable_list.hpp"
 #include "camera.hpp"
 
+vec3 random_in_unit_sphere() {
+  vec3 p;
+  // Generate vectors in unit cube and test if they're in the unit sphere
+  do {
+    p = vec3(drand48(), drand48(), drand48());
+  } while (p.squared_length() >= 1.0);
+  return p;
+}
 vec3 color_ray(const ray& r, hitable *world) {
   const vec3 white = vec3(1.0, 1.0, 1.0);
   const vec3 blue = vec3(0.5, 0.7, 1.0);
-  const vec3 red = vec3(1, 0, 0);
 
   hit_record record;
-  if (world->hit(r, 0.0, MAXFLOAT, record)) {
-    return 0.5 * vec3(record.normal.x() + 1, record.normal.y() + 1, record.normal.z() + 1);
+  // Without t_min = 0.001 (i.e. t_min = 0.0) we get shadow acne
+  if (world->hit(r, 0.001, MAXFLOAT, record)) {
+    vec3 target = record.p + record.normal + random_in_unit_sphere();
+    return 0.5 * color_ray(ray(record.p, target - record.p), world);
   } else {
     vec3 unit_direction = unit_vector(r.direction());
     float t = 0.5 * (unit_direction.y() + 1.0);
@@ -43,6 +52,8 @@ int main() {
         color += color_ray(r, world);
       }
       color /= float(ns);
+      // Gamma correct with gamma = 2
+      color = vec3(sqrt(color.r()), sqrt(color.g()), sqrt(color.b()));
       // I believe 255.99 is used instead of 255 since we're using the `int` constructor on floats, so we'll truncate the results
       //     0 <= r <= 1
       // =>  0 <= 255.99 * r <= 255.99
