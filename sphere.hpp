@@ -2,14 +2,16 @@
 #define RAYTRACER_IN_ONE_WEEKEND_SPHERE_HPP
 
 #include "hitable.hpp"
+#include "material.hpp"
 
 class sphere: public hitable {
 public:
   vec3 _center;
+  material* _material;
   float _radius;
 
   sphere() {}
-  sphere(vec3 center, float radius) : _center(center), _radius(radius) {}
+  sphere(vec3 center, float radius, material* mat) : _center(center), _radius(radius), _material(mat) {}
   virtual bool hit(const ray& r, float t_min, float t_max, hit_record& record) const;
 };
 
@@ -30,6 +32,8 @@ bool sphere::hit(const ray &r, float t_min, float t_max, hit_record &record) con
       record.t = temp;
       record.p = r.point_at_parameter(temp);
       record.normal = (record.p - _center) / _radius;
+      record.mat = _material;
+      return true;
     }
     temp = (-b + sqrt(b * b - a * c)) / a;
     if (temp < t_max && temp > t_min){
